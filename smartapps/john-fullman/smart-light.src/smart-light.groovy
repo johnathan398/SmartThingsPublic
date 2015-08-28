@@ -43,7 +43,7 @@ preferences
         input "PresenceSwitch", "capability.switch", title: "Presence when any switch on:", required: false, multiple: true
 		input "PresenceHumidity", "capability.relativeHumidityMeasurement", title: "Presence when humid:", required: false
         input "HumidityRateThreshold", "number", title: "Consider present when humidity climbing at a rate of (%/min):", required: false, defaultValue: 2
-        input "HumidityThreshold", "number", title: "Or when humidity is above (%):", required: false, defaultValue: 70
+        input "HumidityThreshold", "number", title: "Or when humidity is above (%):", required: false, defaultValue: 65
         paragraph "When humidity begins to drop and below threshold, the humidity sensor will report as not present."
 	}
     section("Presence Schedule")

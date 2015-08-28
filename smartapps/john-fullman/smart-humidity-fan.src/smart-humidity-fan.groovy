@@ -32,7 +32,7 @@ preferences
     section("Fan Activation")
     {
 		input "HumidityIncreaseRate", "number", title: "Humidity Increase Rate (%/min):", required: true, defaultValue: 2
-        input "HumidityThreshold", "number", title: "Humidity Threshold (%):", required: false, defaultValue: 70
+        input "HumidityThreshold", "number", title: "Humidity Threshold (%):", required: false, defaultValue: 65
 	}
     section("Fan Deactivation")
     {
