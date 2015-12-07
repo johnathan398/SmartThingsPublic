@@ -12,6 +12,7 @@
  *   -Allows for a dim setting during certain modes (late-nightlights)
  *   -Allows for auto-shutoff some time after presence is no longer detected
  *   -Allows for special rules when switch is manually touched
+ *   -Douple tap on to ignore all logic and just leave the light on
  *
  *  Copyright 2015 John Fullman
  *  GNU General Public License v2 (https://www.gnu.org/licenses/gpl-2.0.txt)
@@ -83,13 +84,14 @@ def initialize()
     state.sunup = true
     state.AutomaticallyTurnedOn = false
     state.humidpresence = false
+    state.logicoff = false
     if(Lights)
     {
-    	subscribe(Lights, "switch", LightsHandler)
+    	subscribe(Lights, "switch", LightsHandler, [filterEvents: false])
     }
     if(DimmableLights)
     {
-    	subscribe(DimmableLights, "switch", LightsHandler)
+    	subscribe(DimmableLights, "switch", LightsHandler, [filterEvents: false])
     }
     if(PresenceMotion)
     {
@@ -211,13 +213,13 @@ def PresenceUpdate(evt)
 {
 	def currentlypresent = IsPresent(evt)
 	//log.debug "PresenceUpdate(): ${state.presence} => ${currentlypresent} auto: ${state.AutomaticallyTurnedOn}"
-	if(!state.presence && currentlypresent && (ControlMode == "Presence Light" || (ControlMode == "Presence Night Light" && !state.sunup)))
+	if(!state.logicoff && !state.presence && currentlypresent && (ControlMode == "Presence Light" || (ControlMode == "Presence Night Light" && !state.sunup)))
     {
 	    state.AutomaticallyTurnedOn = true
         state.AutomaticallyTurnedOnAt = now()
     	LightsOn()
     }
-    else if(state.presence && !currentlypresent && (ControlMode == "Presence Light" || ControlMode == "Presence Night Light") && (state.AutomaticallyTurnedOn || ManualMode == "Same As Presence"))
+    else if(!state.logicoff && state.presence && !currentlypresent && (ControlMode == "Presence Light" || ControlMode == "Presence Night Light") && (state.AutomaticallyTurnedOn || ManualMode == "Same As Presence"))
     {
     	if(!OffDelayMinutes || OffDelayMinutes == 0)
         {
@@ -293,7 +295,7 @@ def SunriseTimeHandler(evt)
 {
 	state.sunup = true
     state.presence = IsPresent(null)
-    if(ControlMode == "Night Light" || ControlMode == "Presence Night Light")
+    if(!state.logicoff && (ControlMode == "Night Light" || ControlMode == "Presence Night Light"))
     {
     	LightsOff()
     }
@@ -303,7 +305,7 @@ def SunsetTimeHandler(evt)
 {
 	state.sunup = false
     state.presence = IsPresent(null)
-    if(ControlMode == "Night Light" || (ControlMode == "Presence Night Light" && state.presence))
+    if(!state.logicoff && (ControlMode == "Night Light" || (ControlMode == "Presence Night Light" && state.presence)))
     {
 	    state.AutomaticallyTurnedOn = true
         state.AutomaticallyTurnedOnAt = now()
@@ -372,8 +374,16 @@ def LightsHandler(evt)
     {
     	//we've touched a light that was auto activated... turn off auto control
     	state.AutomaticallyTurnedOn = false
+        if(evt.value == "off")
+        {
+        	state.logoff = false
+        }
+        else if(IsDoubleTap(evt.device, evt, "on"))
+        {
+        	state.logicoff = true
+        }
         
-        if((evt.value != "off") && ManualMode == "Turn Off After Timeout" && ManualTimeoutMinutes)
+        if(!state.logicoff && (evt.value != "off") && ManualMode == "Turn Off After Timeout" && ManualTimeoutMinutes)
         {
         	runIn(60 * ManualTimeoutMinutes, ScheduledLightsOffManual)
         }
@@ -395,4 +405,25 @@ def PresenceEndHandler()
 {
 	state.timepresence = false
     PresenceUpdate(null)
+}
+
+
+def IsDoubleTap(check_switch, evt, value)
+{
+	if(evt.value != value)
+    {
+    	return false
+    }
+    def states = check_switch.eventsSince(new Date(evt.date.getTime() - 3000), [all:true, max: 10]).findAll{it.name == "switch" && (it.isPhysical() || !it.type)}
+    if (states)
+    {
+    	for(int i = 0; i < states.size(); i++)
+        {
+        	if(states[i].date.before(evt.date))
+            {
+            	return states[i].value == value
+            }
+        }
+    }
+    return false
 }

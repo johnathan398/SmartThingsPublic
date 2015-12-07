@@ -85,7 +85,7 @@ def IsDoubleTap(check_switch, evt, value)
     {
     	return false
     }
-    def states = check_switch.eventsSince(new Date(evt.date.getTime() - 2000), [all:true, max: 10]).findAll{it.name == "switch" && (it.isPhysical() || !it.type)}
+    def states = check_switch.eventsSince(new Date(evt.date.getTime() - 3000), [all:true, max: 10]).findAll{it.name == "switch" && (it.isPhysical() || !it.type)}
     if (states)
     {
     	for(int i = 0; i < states.size(); i++)
