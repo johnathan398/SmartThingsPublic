@@ -12,8 +12,6 @@
  *
  *  Original Multisensor 6 work done by Robert Vandervoort
  *  Modified by john.fullman@gmail.com
- *
- * SUPPORT FOR AN ULTRAVIOLET CAPABILITY NEEDED BEFORE UV SENSOR WILL WORK
  */
 metadata
 {
@@ -24,11 +22,12 @@ metadata
 		capability "Temperature Measurement"
 		capability "Relative Humidity Measurement"
 		capability "Illuminance Measurement"
+        attribute "ultraviolet", "number"
 		capability "Configuration"
+        command "logconfig"
 		capability "Sensor"
 		capability "Battery"
         capability "Refresh"
-        capability "Polling" //used for LOG CONFIG button
 
 		fingerprint deviceId: "0x2101", inClusters: "0x5E,0x86,0x72,0x59,0x85,0x73,0x71,0x84,0x80,0x30,0x31,0x70,0x7A,0xEF,0x5A,0x98,0x7A", outClusters: "0x5A"
 	}
@@ -70,6 +69,9 @@ metadata
         input "ReportIlluminance3", "bool", title: "Report illuminance in Group 3?", required: true, displayDuringSetup: true, defaultValue: false
         input "ReportUltraviolet3", "bool", title: "Report ultraviolet in Group 3?", required: true, displayDuringSetup: true, defaultValue: true
         input "ReportBattery3", "bool", title: "Report battery level in Group 3?", required: true, displayDuringSetup: true, defaultValue: false
+        
+        //battery
+        input "ReportLowBattery", "bool", title: "Report low battery warnings", required: true, displayDuringSetup: true, defaultValue: true
     }
 
 	simulator
@@ -152,16 +154,16 @@ metadata
         standardTile("configure", "device.configure", inactiveLabel: false, decoration: "flat") {
 			state "configure", label:'', action:"configure", icon:"st.secondary.configure"
 		}
-        standardTile("currentconfig", "polling.poll")
+        standardTile("logconfig", "device.logconfig")
         {
-        	state "default", label: "log config", action: "polling.poll" //, inactiveLabel: true
+        	state "default", label: "log config", action: "logconfig" //, inactiveLabel: true
         }
 		standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat") {
 			state "default", label:'', action:"refresh.refresh", icon:"st.secondary.refresh"
 		}
 
 		main(["motion", "temperature", "humidity", "illuminance", "ultraviolet", "touch"])
-		details(["motion", "temperature", "humidity", "illuminance", "ultraviolet", "touch", "battery", "configure", "currentconfig", "refresh"])
+		details(["motion", "temperature", "humidity", "illuminance", "ultraviolet", "touch", "battery", "configure", "logconfig", "refresh"])
 	}
 }
 
@@ -211,6 +213,7 @@ def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityCommandsSupported
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.batteryv1.BatteryReport cmd) {
+	if((cmd.batteryLevel == 0x00 || cmd.batteryLevel == 0xFF) && !ReportLowBattery) { return }
 	def map = [ name: "battery", unit: "%" ]
 	if (cmd.batteryLevel == 0xFF) {
 		map.value = 1
@@ -720,13 +723,8 @@ def refresh()
 	return secureSequence(GetSensorUpdates(), 3000)
 }
 
-def currentconfig()
+def logconfig()
 {
 	log.debug "Getting current configuration"
     return secureSequence(GetCurrentConfig(), 3000)
-}
-
-def poll()
-{
-	return currentconfig()
 }
