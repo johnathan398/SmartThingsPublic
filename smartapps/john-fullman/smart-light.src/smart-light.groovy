@@ -12,7 +12,8 @@
  *   -Allows for a dim setting during certain modes (late-nightlights)
  *   -Allows for auto-shutoff some time after presence is no longer detected
  *   -Allows for special rules when switch is manually touched
- *   -Douple tap on to ignore all logic and just leave the light on
+ *   -Douple tap on to ignore all logic and just leave the light on (until turned off)
+ *   -Double tap off to ignore all logic for x minutes and stay off disregarding other programming
  *
  *  Copyright 2015 John Fullman
  *  GNU General Public License v2 (https://www.gnu.org/licenses/gpl-2.0.txt)
@@ -64,6 +65,7 @@ preferences
     {
     	input "ManualMode", "enum", title: "What should the lights do when they are manually activated?", options: ["Stay On", "Same As Presence", "Turn Off After Timeout"], required: true, defaultValue: "Same As Presence"
         input "ManualTimeoutMinutes", "number", title: "How long after manual on should the lights turn off (minutes)?", required: false
+        input "DoubleTapOffMinutes", "number", title: "How long should programming be disabled when the light is double-tapped off?", required: false
     }
 }
 
@@ -213,13 +215,13 @@ def PresenceUpdate(evt)
 {
 	def currentlypresent = IsPresent(evt)
 	//log.debug "PresenceUpdate(): ${state.presence} => ${currentlypresent} auto: ${state.AutomaticallyTurnedOn}"
-	if(!state.logicoff && !state.presence && currentlypresent && (ControlMode == "Presence Light" || (ControlMode == "Presence Night Light" && !state.sunup)))
+	if(!state.logicoff && (!state.logicoffuntil || state.logicoffuntil < evt.date.getTime()) && !state.presence && currentlypresent && (ControlMode == "Presence Light" || (ControlMode == "Presence Night Light" && !state.sunup)))
     {
 	    state.AutomaticallyTurnedOn = true
         state.AutomaticallyTurnedOnAt = now()
     	LightsOn()
     }
-    else if(!state.logicoff && state.presence && !currentlypresent && (ControlMode == "Presence Light" || ControlMode == "Presence Night Light") && (state.AutomaticallyTurnedOn || ManualMode == "Same As Presence"))
+    else if(!state.logicoff && (!state.logicoffuntil || state.logicoffuntil < evt.date.getTime()) && state.presence && !currentlypresent && (ControlMode == "Presence Light" || ControlMode == "Presence Night Light") && (state.AutomaticallyTurnedOn || ManualMode == "Same As Presence"))
     {
     	if(!OffDelayMinutes || OffDelayMinutes == 0)
         {
@@ -295,7 +297,7 @@ def SunriseTimeHandler(evt)
 {
 	state.sunup = true
     state.presence = IsPresent(null)
-    if(!state.logicoff && (ControlMode == "Night Light" || ControlMode == "Presence Night Light"))
+    if(!state.logicoff && (!state.logicoffuntil || state.logicoffuntil < evt.date.getTime()) && (ControlMode == "Night Light" || ControlMode == "Presence Night Light"))
     {
     	LightsOff()
     }
@@ -305,7 +307,7 @@ def SunsetTimeHandler(evt)
 {
 	state.sunup = false
     state.presence = IsPresent(null)
-    if(!state.logicoff && (ControlMode == "Night Light" || (ControlMode == "Presence Night Light" && state.presence)))
+    if(!state.logicoff && (!state.logicoffuntil || state.logicoffuntil < evt.date.getTime()) && (ControlMode == "Night Light" || (ControlMode == "Presence Night Light" && state.presence)))
     {
 	    state.AutomaticallyTurnedOn = true
         state.AutomaticallyTurnedOnAt = now()
@@ -376,11 +378,16 @@ def LightsHandler(evt)
     	state.AutomaticallyTurnedOn = false
         if(evt.value == "off")
         {
-        	state.logoff = false
+        	state.logicoff = false
         }
         else if(IsDoubleTap(evt.device, evt, "on"))
         {
         	state.logicoff = true
+        }
+        else if(DoubleTapOffMinutes && IsDoubleTap(evt.device, evt, "off"))
+        {
+        	state.logicoffuntil = evt.date.getTime() + (DoubleTapOffMinutes * 60 * 1000)
+            log.debug "logic disabled ${DoubleTapOffMinutes} minutes"
         }
         
         if(!state.logicoff && (evt.value != "off") && ManualMode == "Turn Off After Timeout" && ManualTimeoutMinutes)

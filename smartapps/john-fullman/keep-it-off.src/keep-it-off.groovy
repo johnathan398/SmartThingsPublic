@@ -56,6 +56,7 @@ def SwitchHandler(evt)
 {
 	def inmode = OffMode == "Any" || (OffMode == "Physical Switch" && evt.isPhysical()) || (OffMode == "App" && !evt.isPhysical())
     def isdoubletap = IsDoubleTap(evt.device, evt, "on")
+    //log.debug "IsDoubleTap(on) = ${isdoubletap}"
 	if(!isdoubletap && inmode && (!atomicState.lastoff || ((evt.date.getTime() - atomicState.lastoff) > GraceSeconds * 1000)))
     {
         if(MinutesToLeaveOn == 0)
