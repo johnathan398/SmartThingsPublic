@@ -140,84 +140,12 @@ def initialize()
     {
 	    subscribe(PresenceSensors, "presence", PresenceHandler)
     }
-    
-    def ScheduledTimes = []
-	for(int i = 0; i < 10; i++)
-    {
-    	def mode = settings["Mode${i}"]
-        String FilterAfterTime = settings["FilterAfterTime${i}"]
-        int iFilterAfterTime = -1
-        if(FilterAfterTime != null)
-        {
-        	iFilterAfterTime = TimeToInteger(toDateTime(FilterAfterTime, null))
-        }
-        String FilterBeforeTime = settings["FilterBeforeTime${i}"]
-        int iFilterBeforeTime = -1
-        if(FilterBeforeTime != null)
-        {
-        	iFilterBeforeTime = TimeToInteger(toDateTime(FilterBeforeTime, null))
-        }
-        
-    	if(mode && FilterAfterTime && !ScheduledTimes.contains(iFilterAfterTime))
-        {
-            ScheduledTimes = ScheduledTimes + [iFilterAfterTime]
-            state.timezone = (int)(timeZone(FilterAfterTime).getOffset(now()) / 3600000)
-        }
-    	if(mode && FilterBeforeTime && !ScheduledTimes.contains(iFilterBeforeTime))
-        {
-            ScheduledTimes = ScheduledTimes + [iFilterBeforeTime]
-            state.timezone = (int)(timeZone(FilterBeforeTime).getOffset(now()) / 3600000)
-        }
-    }
-    state.checktimes = ScheduledTimes
     //def timezonestring = String.format('%04d', state.timezone * 100)
     //log.debug "timezonestring=${timezonestring}"
-    schedule("2015-10-21T00:00:00.000-0700", LateNightTimeHandler)
-    ScheduleNextCheck()
-    UpdateMode()
-}
-
-def ScheduleNextCheck()
-{
-    if(state.checktimes && state.checktimes.size() > 0)
-    {
-        int nextchecktime = 0
-        int currenttime = TimeToInteger(new Date(now()))
-    	int lowesttime = state.checktimes[0]
-        int lowesthightime = -1
-        for(int i = 0; i < state.checktimes.size(); i++)
-        {
-        	def itime = state.checktimes[i]
-        	if(itime < lowesttime)
-            {
-            	lowesttime = itime
-            }
-            if(itime > currenttime && (lowesthightime == -1 || itime < lowesthightime))
-            {
-            	lowesthightime = itime
-            }
-        }
-        
-        if(lowesthightime >= 0)
-        {
-        	nextchecktime = lowesthightime
-        }
-        else
-        {
-        	nextchecktime = lowesttime
-        }
-        int minutes = nextchecktime % 60
-        int hours = (int)((nextchecktime - minutes) / 60)
-        def checkdate = new Date(now())
-        checkdate.setHours(hours - state.timezone)
-        checkdate.setMinutes(minutes)
-        checkdate.setSeconds(0)
-        log.debug "Next check scheduled for time ${checkdate}"
-		schedule(checkdate, TimeHandler)
-    }
     
+    UpdateMode()
+    runEvery5Minutes(UpdateMode)
 }
-
 
 def SunriseTimeHandler(evt)
 {
@@ -234,20 +162,6 @@ def SunsetTimeHandler(evt)
 def PresenceHandler(evt)
 {
 	UpdateMode()
-}
-
-def TimeHandler()
-{
-	UpdateMode()
-	unschedule("TimeHandler")
-    ScheduleNextCheck()
-}
-
-def LateNightTimeHandler()
-{
-	UpdateMode()
-	unschedule("TimeHandler")
-    ScheduleNextCheck()
 }
 
 def GetCurrentPresence()
@@ -372,7 +286,7 @@ def GetNextMode()
 def UpdateMode()
 {
 	def nextmode = GetNextMode()
-    log.debug "UpdateMode -> ${location.mode} -> ${nextmode}"
+    //log.debug "UpdateMode -> ${location.mode} -> ${nextmode}"
     if(nextmode && nextmode != location.mode)
     {
     	location.setMode(nextmode)
