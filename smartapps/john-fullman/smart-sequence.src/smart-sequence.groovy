@@ -2,7 +2,7 @@
  *  Smart Sequence
  *
  *  Performs a sequence of actions.
- *    -Supported Triggers: switches (tap, double tap)
+ *    -Supported Triggers: switches (tap, double tap), schedule times
  *    -Supported Actions: switches
  *    -Supports up to 3 actions
  *
@@ -26,8 +26,9 @@ preferences
 {
 	section("Trigger")
     {
-    	input "TriggerAction", "enum", options: ["Anything", "Turn Off", "Turn On", "Double Tap", "Double Tap On", "Double Tap Off"], title: "Activate sequence when I do this:", required: true
-    	input "TriggerSwitches", "capability.switch", title: "On any of these switches:", required: true, multiple: true
+    	input "TriggerAction", "enum", options: ["Anything", "Turn Off", "Turn On", "Double Tap", "Double Tap On", "Double Tap Off"], title: "Activate sequence when I do this:", required: true, defaultValue: "Anything"
+    	input "TriggerSwitches", "capability.switch", title: "On any of these switches:", required: false, multiple: true
+        input "TriggerTimes", "time", title: "At these times:", required: false, multiple: true
     }
 	section("Action 1")
     {
@@ -62,7 +63,22 @@ def updated()
 
 def initialize()
 {
-	subscribe(TriggerSwitches, "switch", TriggerSwitchHandler, [filterEvents: false])
+	if(TriggerSwitches)
+    {
+		subscribe(TriggerSwitches, "switch", TriggerSwitchHandler, [filterEvents: false])
+    }
+    if(TriggerTimes)
+    {
+    	for(def i = 0; i < TriggerTimes.size(); i++)
+        {
+	    	schedule(TriggerTimes[i], TriggerHanlder)
+        }
+    }
+}
+
+def TriggerHanlder()
+{
+	ScheduleAction(1)
 }
 
 def TriggerSwitchHandler(evt)
