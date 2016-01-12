@@ -83,9 +83,11 @@ def OverviewPage()
 			input "AwayMinTemperature", "number", title: "Away min temperature (degrees):", required: true, defaultValue: 60
 			input "AwayMaxTemperature", "number", title: "Away max temperature (degrees):", required: true, defaultValue: 85
         }
-        section("Modes")
+        section("Programming")
         {
         	input "SleepingModes", "mode", title: "Sleeping modes:", required: false, multiple: true
+            input "SleepingStartTime", "time", title: "Bedtime:", required: false
+            input "SleepingEndTime", "time", title: "Wakeup time:", required: false
         	input "AwayModes", "mode", title: "Away modes:", required: false, multiple: true
         }
     }
@@ -115,7 +117,7 @@ def RoomPage1()
             paragraph "In these modes, this room will be considered occupied even if no motion is detected and no lights are on."
 			input "RoomModes1", "mode", title: "Occupied modes:", required: false, multiple: true
         	paragraph "The room will be considered occupied while there is motion."
-        	input "MotionSensors1", "capability.motion", title: "Motion sensors:", required: false, multiple: true
+        	input "MotionSensors1", "capability.motionSensor", title: "Motion sensors:", required: false, multiple: true
         	paragraph "The room will be considered occupied while any of these lights are on."
             input "LightSwitches1", "capability.switch", title: "Light switches:", required: false, multiple: true
         }
@@ -142,7 +144,7 @@ def RoomPage1()
 
 def RoomPage2()
 {
-    dynamicPage(name: "RoomPage2", title: "Room 2", nextPage: GetNextPage(1), install: false, uninstall: false)
+    dynamicPage(name: "RoomPage2", title: "Room 2", nextPage: GetNextPage(2), install: false, uninstall: false)
     {
         section("Room Info")
         {
@@ -163,7 +165,7 @@ def RoomPage2()
             paragraph "In these modes, this room will be considered occupied even if no motion is detected and no lights are on."
 			input "RoomModes2", "mode", title: "Occupied modes:", required: false, multiple: true
         	paragraph "The room will be considered occupied while there is motion."
-        	input "MotionSensors2", "capability.motion", title: "Motion sensors:", required: false, multiple: true
+        	input "MotionSensors2", "capability.motionSensor", title: "Motion sensors:", required: false, multiple: true
         	paragraph "The room will be considered occupied while any of these lights are on."
             input "LightSwitches2", "capability.switch", title: "Light switches:", required: false, multiple: true
         }
@@ -190,7 +192,7 @@ def RoomPage2()
 
 def RoomPage3()
 {
-    dynamicPage(name: "RoomPage3", title: "Room 3", nextPage: GetNextPage(1), install: false, uninstall: false)
+    dynamicPage(name: "RoomPage3", title: "Room 3", nextPage: GetNextPage(3), install: false, uninstall: false)
     {
         section("Room Info")
         {
@@ -211,7 +213,7 @@ def RoomPage3()
             paragraph "In these modes, this room will be considered occupied even if no motion is detected and no lights are on."
 			input "RoomModes3", "mode", title: "Occupied modes:", required: false, multiple: true
         	paragraph "The room will be considered occupied while there is motion."
-        	input "MotionSensors3", "capability.motion", title: "Motion sensors:", required: false, multiple: true
+        	input "MotionSensors3", "capability.motionSensor", title: "Motion sensors:", required: false, multiple: true
         	paragraph "The room will be considered occupied while any of these lights are on."
             input "LightSwitches3", "capability.switch", title: "Light switches:", required: false, multiple: true
         }
@@ -325,7 +327,7 @@ def GetTemperature(room_index)
     {
     	int len = temp_sesnsors.size()
     	int total_temp = 0
-    	for(i = 0; i < len; i++)
+    	for(def i = 0; i < len; i++)
         {
         	total_temp = total_temp + temp_sesnsors[i].currentValue("temperature")
         }
@@ -353,7 +355,7 @@ def GetOccupancy(room_index)
     def motion_sensors = GetMotionSensors(room_index)
     if(motion_sensors)
     {
-        for(i = 0; i < motion_sensors.size(); i++)
+        for(def i = 0; i < motion_sensors.size(); i++)
         {
         	if(motion_sensors[i].currentValue("motion") == "active")
             {
@@ -365,7 +367,7 @@ def GetOccupancy(room_index)
     def light_switches = GetLightSwitches(room_index)
     if(light_switches)
     {
-        for(i = 0; i < light_switches.size(); i++)
+        for(def i = 0; i < light_switches.size(); i++)
         {
         	if(light_switches[i].currentValue("switch") == "on")
             {
@@ -381,16 +383,16 @@ def initialize()
 {
 	//initialize state with default values
     int iRoomCount = RoomCount.toInteger()
-    state.RoomTemperatures = new double[iRoomCount]
-    state.RoomOccupied = new boolean[iRoomCount]
-    state.RoomLeach = new boolean[iRoomCount] //with no managed heat/cool but with a temp sensor
-    state.RoomState = new String[iRoomCount]
-    for(i = 0; i < iRoomCount; i++)
+    state.RoomTemperature = []
+    state.RoomOccupied = []
+    state.RoomLeach = [] //with no managed heat/cool but with a temp sensor
+    state.RoomState = []
+    for(def i = 0; i < iRoomCount; i++)
     {
-    	state.RoomTemperatures[i] = GetTemperature(i)
-        state.RoomOccupied[i] = GetOccupancy(i)
-        state.RoomLeach[i] = (GetTemperatureSensor(i) && !GetHasVent(i) && !GetSpaceHeaters(i) && !GetAirConditioners(i))
-        state.RoomState[i] = ""
+    	state.RoomTemperature << GetTemperature(i)
+        state.RoomOccupied << GetOccupancy(i)
+        state.RoomLeach << (GetTemperatureSensors(i) && !GetHasVent(i) && !GetSpaceHeaters(i) && !GetAirConditioners(i))
+        state.RoomState << ""
     }
     UpdateOutsideTemperature()
     state.IsThermostatInRoom = false
@@ -400,7 +402,7 @@ def initialize()
     {
 		subscribe(Thermostat, "temperature", ThermostatTemperatureHandler)
     }
-    for(i = 0; i < iRoomCount; i++)
+    for(def i = 0; i < iRoomCount; i++)
     {
     	def temp_sensors = GetTemperatureSensors(i)
         if(temp_sensors)
@@ -409,9 +411,9 @@ def initialize()
             if(Thermostat)
             {
                 int len = temp_sensors.size()
-                for(i = 0; i < len; i++)
+                for(def j = 0; j < len; j++)
                 {
-                	if(Thermostat.id == temp_sensors[i].id)
+                	if(Thermostat.id == temp_sensors[j].id)
                     {
                     	state.IsThermostatInRoom = true
                     }
@@ -422,7 +424,7 @@ def initialize()
     UpdateHouseTemperature()
     
     //subscribe to motion events
-    for(i = 0; i < iRoomCount; i++)
+    for(def i = 0; i < iRoomCount; i++)
     {
     	def motion_sensors = GetMotionSensors(i)
         if(motion_sensors)
@@ -432,7 +434,7 @@ def initialize()
     }
     
     //subscribe to light switch events
-    for(i = 0; i < iRoomCount; i++)
+    for(def i = 0; i < iRoomCount; i++)
     {
     	def light_switches = GetLightSwitches(i)
         if(light_switches)
@@ -443,8 +445,34 @@ def initialize()
     
     //subscribe to application level events
 	subscribe(location, "mode", ModeChangeHandler)
+    runEvery1Hour(UpdateOutsideTemperatureHandler)
+    state.sleeping = false
+    if(SleepingStartTime && SleepingEndTime)
+    {
+		schedule(SleepingStartTime, SleepingStartTimeHandler)
+		schedule(SleepingEndTime, SleepingEndTimeHandler)
+	}
+    UpdateClimate()
 }
 
+def SleepingStartTimeHandler()
+{
+	state.sleeping = true
+	UpdateOutsideTemperature()
+    UpdateClimate()
+}
+def SleepingEndTimeHandler()
+{
+	state.sleeping = false
+	UpdateOutsideTemperature()
+    UpdateClimate()
+}
+
+def UpdateOutsideTemperatureHandler()
+{
+	UpdateOutsideTemperature()
+    UpdateClimate()
+}
 
 def UpdateRoomStatus(room_index, new_status)
 {
@@ -533,15 +561,9 @@ def UpdateRoomStatus(room_index, new_status)
 }
 
 def GetWeatherCurrent() {
-    def params = [
-        uri:  'http://api.openweathermap.org/data/2.5/',
-        path: 'weather',
-        contentType: 'application/json',
-        query: [zip: location.zipCode]
-    ]
     try
     {
-        return httpGet(params)
+        return getWeatherFeature("conditions")
     }
     catch (e)
     {
@@ -560,7 +582,7 @@ def UpdateOutsideTemperature()
         int leach_count = 0
         int leach_total = 0
         int iRoomCount = RoomCount.toInteger()
-        for(i = 0; i < iRoomCount; i++)
+        for(def i = 0; i < iRoomCount; i++)
         {
         	if(state.RoomLeach[i])
             {
@@ -573,11 +595,15 @@ def UpdateOutsideTemperature()
         	avg_leach = leach_total / leach_count
         }
         
+        //log.debug "avg_leach=${avg_leach}"
+        
     	def w = GetWeatherCurrent()
+        //log.debug "w=${w}"
         if(w)
         {
         	//weather data
-            def f = (w.main.temp * (9.0 / 5.0)) - 459.67
+            def f = w.current_observation.temp_f
+            //log.debug "f=${f}"
             state.OutsideTemperatureLastUpdatedTicks = now()
 
             if(avg_leach)
@@ -622,15 +648,15 @@ def UpdateHouseTemperature()
         total_count = 1
         total_sum = temp_sum
     }
-    for(i = 0; i < iRoomCount; i++)
+    for(def i = 0; i < iRoomCount; i++)
     {
     	if(state.RoomOccupied[i] && !state.RoomLeach[i])
         {
             temp_count = temp_count + 1
-            temp_sum = temp_sum + state.RoomTemperatures[i]
+            temp_sum = temp_sum + state.RoomTemperature[i]
         }
         total_count = temp_count + 1
-        total_sum = temp_sum + state.RoomTemperatures[i]
+        total_sum = temp_sum + state.RoomTemperature[i]
     }
     if(temp_count == 0)
     {
@@ -655,9 +681,9 @@ def ThermostatTemperatureHandler(evt)
 def UpdateTemperatures()
 {
     int iRoomCount = RoomCount.toInteger()
-    for(i = 0; i < iRoomCount; i++)
+    for(def i = 0; i < iRoomCount; i++)
     {
-    	state.RoomTemperatures[i] = GetTemperature(i)
+    	state.RoomTemperature[i] = GetTemperature(i)
     }
 }
 
@@ -672,7 +698,7 @@ def TemperatureHandler(evt)
 def UpdateOccupancy()
 {
     int iRoomCount = RoomCount.toInteger()
-    for(i = 0; i < iRoomCount; i++)
+    for(def i = 0; i < iRoomCount; i++)
     {
         state.RoomOccupied = GetOccupancy(i)
     }
@@ -707,12 +733,12 @@ def UpdateClimate()
 	if(state.OutsideTemperature)
     {
     	//weather data available
-	    if(state.OutsideTemperature > ComfortTemperature + 3)
+	    if(state.OutsideTemperature > ComfortTemperature + 2)
         {
         	//hot outside - avoid heating
             low_temp = low_temp - 10
         }
-        else if(state.OutsideTemperature < ComfortTemperature - 3)
+        else if(state.OutsideTemperature < ComfortTemperature - 2)
         {
         	//cold outside - avoid cooling
             high_temp = high_temp + 10
@@ -727,12 +753,12 @@ def UpdateClimate()
     else
     {
     	//no weather data
-        high_temp = high_temp + 3
-        low_temp = low_temp - 3
+        high_temp = high_temp + 2
+        low_temp = low_temp - 2
     }
     
     //adjust high/low range for current mode
-	if(SleepingModes && SleepingModes.contains(location.mode))
+	if((SleepingModes && SleepingModes.contains(location.mode)) || state.sleeping)
     {
         high_temp = SleepingMaxTemperature
     	low_temp = SleepingMinTemperature
@@ -747,6 +773,18 @@ def UpdateClimate()
     if(Thermostat && !state.IsThermostatInRoom && RoomCount == "0")
     {
     	//thermostat only case we can use set points to manage the central air
+        switch(Thermostatmode)
+        {
+        	case "Heating and Cooling":
+	        	Thermostat.auto()
+            	break;
+        	case "Heating Only":
+	        	Thermostat.heat()
+            	break;
+        	case "Cooling Only":
+	        	Thermostat.cool()
+            	break;
+        }
         Thermostat.setHeatingSetpoint(low_temp)
         Thermostat.setCoolingSetpoint(high_temp)
         Thermostat.poll()
@@ -754,15 +792,30 @@ def UpdateClimate()
     else
     {
     	double temp_offset = Thermostat.currentValue("temperature") - state.HouseTemperature
-        if(Thermostat &&
-        	(((ThermostatMode == "Heating Only" || ThermostatMode == "Heating and Cooling") && state.HouseTemperature < low_temp)
-            || ((ThermostatMode == "Cooling Only" || ThermostatMode == "Heating and Cooling") && state.HouseTemperature > high_temp)))
+        if(Thermostat && ThermostatMode == "Heating and Cooling")
         {
         	//use central air to heat/cool the house
-            ManageIndependentRooms(low_temp, high_temp)
+            Thermostat.auto()
             Thermostat.setHeatingSetpoint(low_temp + temp_offset)
             Thermostat.setCoolingSetpoint(high_temp + temp_offset)
             Thermostat.poll()
+            ManageIndependentRooms(low_temp, high_temp)
+        }
+        else if(Thermostat && ThermostatMode == "Heating Only" && state.HouseTemperature <= high_temp + temp_offset)
+        {
+            Thermostat.heat()
+            Thermostat.setHeatingSetpoint(low_temp + temp_offset)
+            Thermostat.setCoolingSetpoint(high_temp + temp_offset)
+            Thermostat.poll()
+            ManageIndependentRooms(low_temp, high_temp)
+        }
+        else if(Thermostat && ThermostatMode == "Cooling Only" && state.HouseTemperature >= low_temp + temp_offset)
+        {
+            Thermostat.cool()
+            Thermostat.setHeatingSetpoint(low_temp + temp_offset)
+            Thermostat.setCoolingSetpoint(high_temp + temp_offset)
+            Thermostat.poll()
+            ManageIndependentRooms(low_temp, high_temp)
         }
         else
         {
@@ -773,7 +826,7 @@ def UpdateClimate()
             }
             
 		    int iRoomCount = RoomCount.toInteger()
-            for(i = 0; i < iRoomCount; i++)
+            for(def i = 0; i < iRoomCount; i++)
             {
             	ManageRoom(i, low_temp, high_temp)
             }
@@ -784,7 +837,7 @@ def UpdateClimate()
 def ManageIndependentRooms(low_temp, high_temp)
 {
     int iRoomCount = RoomCount.toInteger()
-	for(i = 0; i < iRoomCount; i++)
+	for(def i = 0; i < iRoomCount; i++)
     {
     	if(GetHasVent(i))
         {
@@ -806,22 +859,22 @@ def ManageRoom(room_index, low_temp, high_temp)
         if(state.RoomTemperature[room_index] < low_temp)
         {
             //the room is cold - heat it up
-            UpdateRoomStatus(room_index, "heat");
+            UpdateRoomStatus(room_index, "heat")
         }
         else if(state.RoomTemperature[room_index] > high_temp)
         {
             //the room is hot - cool it down
-            UpdateRoomStatus(room_index, "cool");
+            UpdateRoomStatus(room_index, "cool")
         }
         else
         {
             //the room is just right - leave it alone
-            UpdateRoomStatus(room_index, "");
+            UpdateRoomStatus(room_index, "")
         }
     }
     else
     {
         //do not manage temperature for unoccupied rooms
-        UpdateRoomStatus(room_index, "");
+        UpdateRoomStatus(room_index, "")
     }
 }
