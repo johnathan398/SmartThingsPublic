@@ -1,10 +1,10 @@
 /**
  *  Smart Sequence
  *
- *  Performs a sequence of actions.
+ *  Performs a sequence of actions with time delays in between.
  *    -Supported Triggers: switches (tap, double tap), schedule times
- *    -Supported Actions: switches
- *    -Supports up to 3 actions
+ *    -Supported Actions: switches, locks
+ *    -Supports up to 5 actions
  *
  *  Copyright 2015 John Fullman
  *  GNU General Public License v2 (https://www.gnu.org/licenses/gpl-2.0.txt)
@@ -33,20 +33,37 @@ preferences
 	section("Action 1")
     {
 		input "Delay1", "number", title: "Delay (in seconds):", required: true, defaultValue: 0
-        input "ActionType1", "enum", options: ["No Action", "Turn On", "Turn Off"], title: "Do this:", required: true, defaultValue: "No Action"
+        input "ActionType1", "enum", options: ["No Action", "Turn On", "Turn Off", "Lock", "Unlock"], title: "Do this:", required: true, defaultValue: "No Action"
         input "Switches1", "capability.switch", title: "With these switches:", required: false, multiple: true
+        input "Locks1", "capability.lock", title: "or With these locks:", required: false, multiple: true
 	}
 	section("Action 2")
     {
 		input "Delay2", "number", title: "Delay (in seconds):", required: true, defaultValue: 0
-        input "ActionType2", "enum", options: ["No Action", "Turn On", "Turn Off"], title: "Do this:", required: true, defaultValue: "No Action"
+        input "ActionType2", "enum", options: ["No Action", "Turn On", "Turn Off", "Lock", "Unlock"], title: "Do this:", required: true, defaultValue: "No Action"
         input "Switches2", "capability.switch", title: "With these switches:", required: false, multiple: true
+        input "Locks2", "capability.lock", title: "or With these locks:", required: false, multiple: true
 	}
 	section("Action 3")
     {
 		input "Delay3", "number", title: "Delay (in seconds):", required: true, defaultValue: 0
-        input "ActionType3", "enum", options: ["No Action", "Turn On", "Turn Off"], title: "Do this:", required: true, defaultValue: "No Action"
+        input "ActionType3", "enum", options: ["No Action", "Turn On", "Turn Off", "Lock", "Unlock"], title: "Do this:", required: true, defaultValue: "No Action"
         input "Switches3", "capability.switch", title: "With these switches:", required: false, multiple: true
+        input "Locks3", "capability.lock", title: "or With these locks:", required: false, multiple: true
+	}
+	section("Action 4")
+    {
+		input "Delay4", "number", title: "Delay (in seconds):", required: true, defaultValue: 0
+        input "ActionType4", "enum", options: ["No Action", "Turn On", "Turn Off", "Lock", "Unlock"], title: "Do this:", required: true, defaultValue: "No Action"
+        input "Switches4", "capability.switch", title: "With these switches:", required: false, multiple: true
+        input "Locks4", "capability.lock", title: "or With these locks:", required: false, multiple: true
+	}
+	section("Action 5")
+    {
+		input "Delay5", "number", title: "Delay (in seconds):", required: true, defaultValue: 0
+        input "ActionType5", "enum", options: ["No Action", "Turn On", "Turn Off", "Lock", "Unlock"], title: "Do this:", required: true, defaultValue: "No Action"
+        input "Switches5", "capability.switch", title: "With these switches:", required: false, multiple: true
+        input "Locks5", "capability.lock", title: "or With these locks:", required: false, multiple: true
 	}
 }
 
@@ -114,6 +131,12 @@ def ScheduleAction(i)
         	case 3:
 				runIn(Delay, RunAction3)
             	break;
+        	case 4:
+				runIn(Delay, RunAction4)
+            	break;
+        	case 5:
+				runIn(Delay, RunAction5)
+            	break;
         }
     }
 }
@@ -121,11 +144,14 @@ def ScheduleAction(i)
 def RunAction1() { RunAction(1) }
 def RunAction2() { RunAction(2) }
 def RunAction3() { RunAction(3) }
+def RunAction4() { RunAction(4) }
+def RunAction5() { RunAction(5) }
 
 def RunAction(i)
 {
 	def ActionType = settings["ActionType${i}"]
     def Switches = settings["Switches${i}"]
+    def Locks = settings["Locks${i}"]
     
     switch(ActionType)
     {
@@ -135,8 +161,14 @@ def RunAction(i)
     	case "Turn Off":
         	Switches.off()
         	break;
+    	case "Lock":
+        	Locks.lock()
+        	break;
+    	case "Unlock":
+        	Locks.unlock()
+        	break;
 	}
-    if(i <= 2)
+    if(i < 5)
     {
     	ScheduleAction(i+1)
     }
