@@ -29,17 +29,22 @@ preferences
 {
     section("Door Devices")
     {
-    	input "DoorName", "text", title: "Door Name:", required: true
     	input "DoorControl", "capability.doorControl", title: "Door actuator:", required: false
     	input "DoorContact", "capability.contactSensor", title: "Door contact sensor:", required: false
     	input "DoorLock", "capability.lock", title: "Door Lock:", required: false
     }
     section("Mode Actions")
     {
+    	paragraph "Mode 1"
 		input "Modes1", "mode", title: "For these modes:", required: false, multiple: true
     	input "EnterModeAction1", "enum", title: "Do this at mode entry:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
     	input "ExitModeAction1", "enum", title: "Do this at mode exit:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
         input "ModeActivityNotice1", "boolean", title: "Notify if activity while in these modes:", required: true, defaultValue: false
+    	paragraph "Mode 2"
+		input "Modes2", "mode", title: "For these modes:", required: false, multiple: true
+    	input "EnterModeAction2", "enum", title: "Do this at mode entry:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
+    	input "ExitModeAction2", "enum", title: "Do this at mode exit:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
+        input "ModeActivityNotice2", "boolean", title: "Notify if activity while in these modes:", required: true, defaultValue: false
     }
     section("Scheduled Actions")
     {
@@ -78,7 +83,13 @@ def initialize()
     {
     	subscribe(DoorLock, "lock", OpeningChangeHandler)
     }
-    state.inmode = IsInMode()
+    
+    state.inmode = []
+    for(def i = 0; i < 2; i++)
+    {
+	    state.inmode << IsInMode(i)
+    }
+    
     if(ScheduleTime1)
     {
     	schedule(ScheduleTime1, Time1Handler)
@@ -89,33 +100,40 @@ def initialize()
     }
 }
 
-def IsInMode()
+def IsInMode(i)
 {
-	return Modes1 && Modes1.contains(location.mode)
+	def Modes = settings["Modes${i+1}"]
+	return Modes && Modes.contains(location.mode)
 }
 
 def OpeningChangeHandler(evt)
 {
-	if(IsInMode() && ModeActivityNotice1 && evt.isPhysical())
+	for(def i = 0; i < 2; i++)
     {
-    	sendPush("${evt.device.displayName} is ${evt.value}")
+        if(IsInMode(i) && settings["ModeActivityNotice${i+1}"])
+        {
+            sendPush("${evt.device.displayName} is ${evt.value}")
+        }
     }
 }
 
 def ModeChangeHandler(evt)
 {
-	def currinmode = IsInmode()
-    if(!state.inmode && currinmode)
+	for(def i = 0; i < 2; i++)
     {
-    	//mode entry
-        DoAction(EnterModeAction1)
+        def currinmode = IsInMode(i)
+        if(!state.inmode[i] && currinmode)
+        {
+            //mode entry
+            DoAction(settings["EnterModeAction${i+1}"])
+        }
+        else if(state.inmode[i] && !currinmode)
+        {
+            //mode exit
+            DoAction(settings["ExitModeAction${i+1}"])
+        }
+        state.inmode[i] = currinmode
     }
-    else if(state.inmode && !currinmode)
-    {
-    	//mode exit
-        DoAction(ExitModeAction1)
-    }
-	state.inmode = currinmode
 }
 
 def Time1Handler()
