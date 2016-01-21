@@ -151,17 +151,20 @@ def SunriseTimeHandler(evt)
 {
 	state.sunup = true
     UpdateMode()
+    runEvery5Minutes(UpdateMode)
 }
 
 def SunsetTimeHandler(evt)
 {
 	state.sunup = false
     UpdateMode()
+    runEvery5Minutes(UpdateMode)
 }
 
 def PresenceHandler(evt)
 {
 	UpdateMode()
+    runEvery5Minutes(UpdateMode)
 }
 
 def GetCurrentPresence()
