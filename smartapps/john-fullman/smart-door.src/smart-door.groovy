@@ -39,12 +39,12 @@ preferences
 		input "Modes1", "mode", title: "For these modes:", required: false, multiple: true
     	input "EnterModeAction1", "enum", title: "Do this at mode entry:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
     	input "ExitModeAction1", "enum", title: "Do this at mode exit:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
-        input "ModeActivityNotice1", "boolean", title: "Notify if activity while in these modes:", required: true, defaultValue: false
+        input "ModeActivityNotice1", "bool", title: "Notify if activity while in these modes:", required: true, defaultValue: false
     	paragraph "Mode 2"
 		input "Modes2", "mode", title: "For these modes:", required: false, multiple: true
     	input "EnterModeAction2", "enum", title: "Do this at mode entry:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
     	input "ExitModeAction2", "enum", title: "Do this at mode exit:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
-        input "ModeActivityNotice2", "boolean", title: "Notify if activity while in these modes:", required: true, defaultValue: false
+        input "ModeActivityNotice2", "bool", title: "Notify if activity while in these modes:", required: true, defaultValue: false
     }
     section("Scheduled Actions")
     {
