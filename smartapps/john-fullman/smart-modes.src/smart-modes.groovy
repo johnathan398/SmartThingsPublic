@@ -212,7 +212,7 @@ def DoesModeApply(FilterAfterTime, FilterBeforeTime, FilterPresence, FilterSun, 
     {
     	Date filterdate = toDateTime(FilterAfterTime, null)
         int compareresult = CompareTime(currenttime, filterdate)
-        if(compareresult < -2)
+        if(compareresult < 0)
         {
         	return false
         }
@@ -221,7 +221,7 @@ def DoesModeApply(FilterAfterTime, FilterBeforeTime, FilterPresence, FilterSun, 
     {
     	Date filterdate = toDateTime(FilterBeforeTime, null)
         int compareresult = CompareTime(currenttime, filterdate)
-        if(compareresult > -1)
+        if(compareresult >= 0)
         {
         	return false
         }

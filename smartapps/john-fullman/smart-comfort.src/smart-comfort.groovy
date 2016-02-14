@@ -256,7 +256,12 @@ def GetTemperatureSensors(room_index)
 
 def GetTemperatureOffset(room_index)
 {
-	return settings["TemperatureOffset${room_index + 1}"]
+	def offset = settings["TemperatureOffset${room_index + 1}"]
+    if(!offset)
+    {
+    	return 0
+    }
+	return offset
 }
 
 def GetRoomModes(room_index)
@@ -386,13 +391,13 @@ def initialize()
     state.RoomTemperature = []
     state.RoomOccupied = []
     state.RoomLeach = [] //with no managed heat/cool but with a temp sensor
-    state.RoomState = []
+    state.RoomStatus = []
     for(def i = 0; i < iRoomCount; i++)
     {
     	state.RoomTemperature << GetTemperature(i)
         state.RoomOccupied << GetOccupancy(i)
         state.RoomLeach << (GetTemperatureSensors(i) && !GetHasVent(i) && !GetSpaceHeaters(i) && !GetAirConditioners(i))
-        state.RoomState << ""
+        state.RoomStatus << ""
     }
     UpdateOutsideTemperature()
     state.IsThermostatInRoom = false
@@ -648,15 +653,18 @@ def UpdateHouseTemperature()
         total_count = 1
         total_sum = temp_sum
     }
-    for(def i = 0; i < iRoomCount; i++)
+    for(int i = 0; i < iRoomCount; i++)
     {
-    	if(state.RoomOccupied[i] && !state.RoomLeach[i])
+    	if(state.RoomTemperature[i])
         {
-            temp_count = temp_count + 1
-            temp_sum = temp_sum + state.RoomTemperature[i]
+            if(state.RoomOccupied[i] && !state.RoomLeach[i])
+            {
+                temp_count = temp_count + 1
+                temp_sum = temp_sum + state.RoomTemperature[i]
+            }
+            total_count = temp_count + 1
+            total_sum = temp_sum + state.RoomTemperature[i]
         }
-        total_count = temp_count + 1
-        total_sum = temp_sum + state.RoomTemperature[i]
     }
     if(temp_count == 0)
     {
@@ -700,14 +708,14 @@ def UpdateOccupancy()
     int iRoomCount = RoomCount.toInteger()
     for(def i = 0; i < iRoomCount; i++)
     {
-        state.RoomOccupied = GetOccupancy(i)
+        state.RoomOccupied[i] = GetOccupancy(i)
     }
 }
 
 def MotionHandler(evt)
 {
 	UpdateOccupancy()
-	UpdateWeather()
+	UpdateOutsideTemperature()
     UpdateClimate()
 }
 

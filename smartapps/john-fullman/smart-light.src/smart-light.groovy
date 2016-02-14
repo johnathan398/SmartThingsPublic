@@ -372,15 +372,11 @@ def ScheduledLightsOffManual()
 
 def LightsHandler(evt)
 {
-	if(evt.isPhysical())
+	if(evt.isPhysical() || !evt.type)
     {
     	//we've touched a light that was auto activated... turn off auto control
     	state.AutomaticallyTurnedOn = false
-        if(evt.value == "off")
-        {
-        	state.logicoff = false
-        }
-        else if(IsDoubleTap(evt.device, evt, "on"))
+        if(IsDoubleTap(evt.device, evt, "on"))
         {
         	state.logicoff = true
         }
@@ -388,6 +384,10 @@ def LightsHandler(evt)
         {
         	state.logicoffuntil = evt.date.getTime() + (DoubleTapOffMinutes * 60 * 1000)
             log.debug "logic disabled ${DoubleTapOffMinutes} minutes"
+        }
+        else if(evt.value == "off" && evt.isPhysical())
+        {
+        	state.logicoff = false
         }
         
         if(!state.logicoff && (evt.value != "off") && ManualMode == "Turn Off After Timeout" && ManualTimeoutMinutes)
