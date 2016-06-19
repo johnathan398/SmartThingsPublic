@@ -376,11 +376,11 @@ def LightsHandler(evt)
     {
     	//we've touched a light that was auto activated... turn off auto control
     	state.AutomaticallyTurnedOn = false
-        if(IsDoubleTap(evt.device, evt, "on"))
+        if(IsDoubleTap(evt.device, evt, "on") || (evt.value == "on" && !evt.isStateChange()))
         {
         	state.logicoff = true
         }
-        else if(DoubleTapOffMinutes && IsDoubleTap(evt.device, evt, "off"))
+        else if(DoubleTapOffMinutes && IsDoubleTap(evt.device, evt, "off") || (evt.value == "off" && !evt.isStateChange()))
         {
         	state.logicoffuntil = evt.date.getTime() + (DoubleTapOffMinutes * 60 * 1000)
             log.debug "logic disabled ${DoubleTapOffMinutes} minutes"

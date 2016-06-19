@@ -26,7 +26,7 @@ preferences
 {
 	section("Trigger")
     {
-    	input "TriggerAction", "enum", options: ["Anything", "Turn Off", "Turn On", "Double Tap", "Double Tap On", "Double Tap Off"], title: "Activate sequence when I do this:", required: true, defaultValue: "Anything"
+    	input "TriggerAction", "enum", options: ["Anything", "Turn Off", "Turn On", "Double Tap", "Double Tap On", "Double Tap Off", "Inert Tap", "Inert Tap On", "Inert Tap Off"], title: "Activate sequence when I do this:", required: true, defaultValue: "Anything"
     	input "TriggerSwitches", "capability.switch", title: "On any of these switches:", required: false, multiple: true
         input "TriggerTimes", "time", title: "At these times:", required: false, multiple: true
     }
@@ -105,6 +105,8 @@ def TriggerSwitchHandler(evt)
       || (TriggerAction == "Turn On" && evt.value == "on")
       || ((TriggerAction == "Double Tap" || TriggerAction == "Double Tap On") && IsDoubleTap(evt.device, evt, "on"))
       || ((TriggerAction == "Double Tap" || TriggerAction == "Double Tap Off") && IsDoubleTap(evt.device, evt, "off"))
+      || ((TriggerAction == "Inert Tap" || TriggerAction == "Inert Tap On") && evt.value == "on" && !evt.isStateChange())
+      || ((TriggerAction == "Inert Tap" || TriggerAction == "Inert Tap Off") && evt.value == "off" && !evt.isStateChange())
       )
     {
     	ScheduleAction(1)
