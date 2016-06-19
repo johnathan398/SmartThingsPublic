@@ -111,6 +111,7 @@ def RoomPage1()
         	input "TemperatureSensors1", "capability.temperatureMeasurement", title: "Temperature sensor:", required: false, multiple: true
         	paragraph "If you find that the reported temperature is not accurate, you can offset it."
             input "TemperatureOffset1", "number", title: "Temperature sensor offset (degrees):", required: false
+            input "TemperatureOffsetDirection1", "enum", title: "Temperature offset direction:", required: false, options: ["Up", "Down"]
         }
     	section("Occupancy")
         {
@@ -159,6 +160,7 @@ def RoomPage2()
         	input "TemperatureSensors2", "capability.temperatureMeasurement", title: "Temperature sensor:", required: false, multiple: true
         	paragraph "If you find that the reported temperature is not accurate, you can offset it."
             input "TemperatureOffset2", "number", title: "Temperature sensor offset (degrees):", required: false
+            input "TemperatureOffsetDirection2", "enum", title: "Temperature offset direction:", required: false, options: ["Up", "Down"]
         }
     	section("Occupancy")
         {
@@ -207,6 +209,7 @@ def RoomPage3()
         	input "TemperatureSensors3", "capability.temperatureMeasurement", title: "Temperature sensor:", required: false, multiple: true
         	paragraph "If you find that the reported temperature is not accurate, you can offset it."
             input "TemperatureOffset3", "number", title: "Temperature sensor offset (degrees):", required: false
+            input "TemperatureOffsetDirection3", "enum", title: "Temperature offset direction:", required: false, options: ["Up", "Down"]
         }
     	section("Occupancy")
         {
@@ -260,6 +263,14 @@ def GetTemperatureOffset(room_index)
     if(!offset)
     {
     	return 0
+    }
+    if(settings["TemperatureOffsetDirection${room_index + 1}"] == "Down")
+    {
+    	return offset * -1;
+    }
+    else
+    {
+		return offset
     }
 	return offset
 }
