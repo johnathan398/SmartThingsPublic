@@ -45,6 +45,11 @@ preferences
     	input "EnterModeAction2", "enum", title: "Do this at mode entry:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
     	input "ExitModeAction2", "enum", title: "Do this at mode exit:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
         input "ModeActivityNotice2", "bool", title: "Notify if activity while in these modes:", required: true, defaultValue: false
+    	paragraph "Mode 3"
+		input "Modes3", "mode", title: "For these modes:", required: false, multiple: true
+    	input "EnterModeAction3", "enum", title: "Do this at mode entry:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
+    	input "ExitModeAction3", "enum", title: "Do this at mode exit:", required: true, options: ["Nothing", "Lock", "Unlock", "Open", "Close", "Notify If Unlocked", "Notify If Open"], defaultValue: "Nothing"
+        input "ModeActivityNotice3", "bool", title: "Notify if activity while in these modes:", required: true, defaultValue: false
     }
     section("Scheduled Actions")
     {
@@ -85,7 +90,7 @@ def initialize()
     }
     
     state.inmode = []
-    for(def i = 0; i < 2; i++)
+    for(def i = 0; i < 3; i++)
     {
 	    state.inmode << IsInMode(i)
     }
@@ -108,7 +113,7 @@ def IsInMode(i)
 
 def OpeningChangeHandler(evt)
 {
-	for(def i = 0; i < 2; i++)
+	for(def i = 0; i < 3; i++)
     {
         if(IsInMode(i) && settings["ModeActivityNotice${i+1}"])
         {
@@ -119,7 +124,7 @@ def OpeningChangeHandler(evt)
 
 def ModeChangeHandler(evt)
 {
-	for(def i = 0; i < 2; i++)
+	for(def i = 0; i < 3; i++)
     {
         def currinmode = IsInMode(i)
         if(!state.inmode[i] && currinmode)

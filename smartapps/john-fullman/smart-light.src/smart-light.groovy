@@ -60,10 +60,11 @@ preferences
 		input "OffDelayMinutes", "number", title: "How long after presence is no longer detected to turn off (minutes):", required: true, defaultValue: 1
     	input "DimModes", "mode", title: "Which modes should the dimmable lights come on dimly:", required: false, multiple: true
     	input "DimLevel", "number", title: "What level is considered dim (0-100)?", required: false, defaultValue: 10
+        input "AllowLogicOff", "enum", title: "Disable logic with double tapping:", required: true, options: ["Yes", "No"], defaultValue: "Yes"
     }
     section("Manual Activation")
     {
-    	input "ManualMode", "enum", title: "What should the lights do when they are manually activated?", options: ["Stay On", "Same As Presence", "Turn Off After Timeout"], required: true, defaultValue: "Same As Presence"
+    	input "ManualMode", "enum", title: "What should the lights do when they are manually activated?", options: ["Stay On", "Same As Presence", "Turn Off After Timeout", "Timeout Unless Present"], required: true, defaultValue: "Same As Presence"
         input "ManualTimeoutMinutes", "number", title: "How long after manual on should the lights turn off (minutes)?", required: false
         input "DoubleTapOffMinutes", "number", title: "How long should programming be disabled when the light is double-tapped off?", required: false
     }
@@ -221,7 +222,7 @@ def PresenceUpdate(evt)
         state.AutomaticallyTurnedOnAt = now()
     	LightsOn()
     }
-    else if(!state.logicoff && (!state.logicoffuntil || state.logicoffuntil < evt.date.getTime()) && state.presence && !currentlypresent && (ControlMode == "Presence Light" || ControlMode == "Presence Night Light") && (state.AutomaticallyTurnedOn || ManualMode == "Same As Presence"))
+    else if(!state.logicoff && (!state.logicoffuntil || state.logicoffuntil < evt.date.getTime()) && state.presence && !currentlypresent && (ControlMode == "Presence Light" || ControlMode == "Presence Night Light") && (state.AutomaticallyTurnedOn || ManualMode == "Same As Presence" || ManualMode == "Timeout Unless Present"))
     {
     	if(!OffDelayMinutes || OffDelayMinutes == 0)
         {
@@ -356,7 +357,7 @@ def LightsOff()
 
 def ScheduledLightsOffNoPresence()
 {
-	if(!state.presence && (state.AutomaticallyTurnedOn || ManualMode == "Same As Presence"))
+	if(!state.presence && (state.AutomaticallyTurnedOn || ManualMode == "Same As Presence" || ManualMode == "Timeout Unless Present"))
     {
     	LightsOff()
     }
@@ -364,7 +365,7 @@ def ScheduledLightsOffNoPresence()
 
 def ScheduledLightsOffManual()
 {
-	if(!state.AutomaticallyTurnedOn)
+	if(!state.AutomaticallyTurnedOn && !(ManualMode == "Timeout Unless Present" && state.presence))
     {
     	LightsOff()
     }
@@ -378,12 +379,12 @@ def LightsHandler(evt)
     	//log.debug "running light handler logic"
     	//we've touched a light that was auto activated... turn off auto control
     	state.AutomaticallyTurnedOn = false
-        if(IsDoubleTap(evt.device, evt, "on") || (evt.value == "on" && !evt.isStateChange()))
+        if(AllowLogicOff == "Yes" && (IsDoubleTap(evt.device, evt, "on") || (evt.value == "on" && !evt.isStateChange())))
         {
         	state.logicoff = true
             //log.debug "logic disabled until the light is turned back on"
         }
-        else if(DoubleTapOffMinutes && IsDoubleTap(evt.device, evt, "off") || (evt.value == "off" && !evt.isStateChange()))
+        else if(AllowLogicOff == "Yes" && (DoubleTapOffMinutes && IsDoubleTap(evt.device, evt, "off") || (evt.value == "off" && !evt.isStateChange())))
         {
         	state.logicoffuntil = evt.date.getTime() + (DoubleTapOffMinutes * 60 * 1000)
             //log.debug "logic disabled ${DoubleTapOffMinutes} minutes"
@@ -394,7 +395,7 @@ def LightsHandler(evt)
             //log.debug "logic re-enabled"
         }
         
-        if(!state.logicoff && (evt.value != "off") && ManualMode == "Turn Off After Timeout" && ManualTimeoutMinutes)
+        if(!state.logicoff && (evt.value != "off") && (ManualMode == "Turn Off After Timeout" || ManualMode == "Timeout Unless Present") && ManualTimeoutMinutes)
         {
         	runIn(60 * ManualTimeoutMinutes, ScheduledLightsOffManual)
         }
