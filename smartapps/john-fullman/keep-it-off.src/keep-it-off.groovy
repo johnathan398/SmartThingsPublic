@@ -31,6 +31,7 @@ preferences
     section("Behavior")
     {
 		input "MinutesToLeaveOn", "number", title: "How long before turning off (minutes):", required: true
+		input "SecondsToLeaveOn", "number", title: "How long before turning off (seconds):", required: true, defaultValue: 0
         input "GraceSeconds", "number", title: "If turned back on within x seconds, disable auto-shutoff:", required: true, defaultValue: 10
         input "OffMode", "enum", title: "Turn off when turned on via:", required: true, options: ["Physical Switch", "App", "Any"], defaultValue: "Any"
     }
@@ -59,13 +60,13 @@ def SwitchHandler(evt)
     //log.debug "IsDoubleTap(on) = ${isdoubletap}"
 	if(!isdoubletap && inmode && (!atomicState.lastoff || ((evt.date.getTime() - atomicState.lastoff) > GraceSeconds * 1000)))
     {
-        if(MinutesToLeaveOn == 0)
+        if(MinutesToLeaveOn == 0 && SecondsToLeaveOn == 0)
         {
             TurnOffHandler()
         }
         else
         {
-            runIn(60 * MinutesToLeaveOn, TurnOffHandler)
+            runIn((60 * MinutesToLeaveOn) + SecondsToLeaveOn, TurnOffHandler)
         }
     }
     if(isdoubletap)
